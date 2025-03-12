@@ -11,6 +11,6 @@
     "socket.io": "^4.7.2"
   },
   "engines": {
-    "node": "18.x" // Specify your Node.js version
+    "node": "22.11.0" // Specify your Node.js version
   }
 }
