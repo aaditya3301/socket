@@ -5,11 +5,13 @@ const { Server } = require('socket.io');
 
 const app = express();
 const server = http.createServer(app);
+// In your server.js on Railway
 const io = new Server(server, {
   cors: {
-    origin: '*', // Allow all origins (replace with your Vercel frontend URL in production)
-    methods: ['GET', 'POST'],
-  },
+    origin: ["https://bidzyy.vercel.app", "http://localhost:3000"],
+    methods: ["GET", "POST"],
+    credentials: true
+  }
 });
 
 // Track active auctions and bids
