@@ -11,7 +11,7 @@ const server = http.createServer(app);
 // Socket.IO server with CORS configuration
 const io = new Server(server, {
   cors: {
-    origin: ["https://bidzyy.vercel.app", "http://localhost:3000"],
+    origin: ["https://bidzy.vercel.app", "http://localhost:3000"],
     methods: ["GET", "POST"],
     credentials: true
   }
@@ -45,11 +45,12 @@ io.on('connection', (socket) => {
         leaderboard: [],
         timeRemaining: 1800, // 30 minutes in seconds
         participants: {},
-        isActive: true,
+        isActive: false, // Start as inactive until countdown finishes
         bidCooldown: 30, // 30 second cooldown
         lastBidTime: Date.now(),
         cooldownActive: false,
-        startTime: Date.now()
+        startTime: Date.now(),
+        startCountdown: 30 // 30 second countdown before auction starts
       };
     }
 
@@ -70,7 +71,9 @@ io.on('connection', (socket) => {
       timeRemaining: auctions[auctionId].timeRemaining,
       activeUsers,
       cooldownRemaining: auctions[auctionId].cooldownActive ? 
-        Math.max(0, auctions[auctionId].bidCooldown - Math.floor((Date.now() - auctions[auctionId].lastBidTime) / 1000)) : 0
+        Math.max(0, auctions[auctionId].bidCooldown - Math.floor((Date.now() - auctions[auctionId].lastBidTime) / 1000)) : 0,
+      startCountdown: auctions[auctionId].startCountdown,
+      isActive: auctions[auctionId].isActive
     });
 
     // Notify everyone about updated user count
@@ -169,7 +172,9 @@ io.on('connection', (socket) => {
       leaderboard: auctions[auctionId].leaderboard,
       timeRemaining: auctions[auctionId].timeRemaining,
       activeUsers,
-      cooldownRemaining: auctions[auctionId].bidCooldown
+      cooldownRemaining: auctions[auctionId].bidCooldown,
+      startCountdown: auctions[auctionId].startCountdown,
+      isActive: auctions[auctionId].isActive
     });
   });
 
@@ -201,6 +206,25 @@ io.on('connection', (socket) => {
 setInterval(() => {
   Object.keys(auctions).forEach(auctionId => {
     const auction = auctions[auctionId];
+    
+    // Process auction start countdown if not active
+    if (!auction.isActive && auction.startCountdown > 0) {
+      auction.startCountdown--;
+      
+      // Notify clients of countdown
+      io.to(auctionId).emit('start_countdown_update', {
+        auctionId,
+        startCountdown: auction.startCountdown
+      });
+      
+      // If countdown reaches zero, activate the auction
+      if (auction.startCountdown === 0) {
+        auction.isActive = true;
+        io.to(auctionId).emit('auction_started', {
+          auctionId
+        });
+      }
+    }
     
     if (auction.isActive) {
       // Process auction main timer
@@ -251,7 +275,9 @@ setInterval(() => {
           leaderboard: auction.leaderboard,
           activeUsers,
           cooldownRemaining: auction.cooldownActive ? 
-            Math.max(0, auction.bidCooldown - Math.floor((Date.now() - auction.lastBidTime) / 1000)) : 0
+            Math.max(0, auction.bidCooldown - Math.floor((Date.now() - auction.lastBidTime) / 1000)) : 0,
+          startCountdown: auction.startCountdown,
+          isActive: auction.isActive
         });
       }
       
@@ -311,7 +337,8 @@ app.get('/auctions', (req, res) => {
     timeRemaining: auction.timeRemaining,
     isActive: auction.isActive,
     participants: Object.keys(auction.participants).length,
-    bids: auction.leaderboard.length
+    bids: auction.leaderboard.length,
+    startCountdown: auction.startCountdown
   }));
   
   res.status(200).json(auctionSummary);
