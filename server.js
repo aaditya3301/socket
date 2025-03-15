@@ -45,7 +45,7 @@ io.on('connection', (socket) => {
         leaderboard: [],
         timeRemaining: 1800, // 30 minutes in seconds
         participants: {},
-        isActive: false, // Start as inactive until countdown finishes
+        isActive: false, // Start as inactive until countdown completes
         bidCooldown: 30, // 30 second cooldown
         lastBidTime: Date.now(),
         cooldownActive: false,
@@ -54,7 +54,7 @@ io.on('connection', (socket) => {
       };
     }
 
-    // Add user to participants
+    // Add user to participants with their actual userId (not socket.id)
     auctions[auctionId].participants[socket.id] = { userId, username };
 
     // Count active unique users (by userId, not socket.id)
@@ -90,7 +90,7 @@ io.on('connection', (socket) => {
     if (auctions[auctionId] && auctions[auctionId].participants[socket.id]) {
       delete auctions[auctionId].participants[socket.id];
       
-      // Count active unique users
+      // Count active unique users by userId, not socket.id
       const uniqueUserIds = new Set(
         Object.values(auctions[auctionId].participants).map((p) => p.userId)
       );
@@ -187,7 +187,7 @@ io.on('connection', (socket) => {
       if (auctions[auctionId].participants[socket.id]) {
         delete auctions[auctionId].participants[socket.id];
         
-        // Count active unique users
+        // Count active unique users by userId, not socket.id
         const uniqueUserIds = new Set(
           Object.values(auctions[auctionId].participants).map((p) => p.userId)
         );
