@@ -11,9 +11,10 @@ const server = http.createServer(app);
 // Socket.IO server with CORS configuration
 const io = new Server(server, {
   cors: {
-    origin: ["https://bidzy.vercel.app", "http://localhost:3000"],
+    origin: ["http://localhost:3000", "https://bidzy.vercel.app"],
     methods: ["GET", "POST"],
-    credentials: true
+    credentials: true,
+    allowedHeaders: ["*"]
   }
 });
 
