@@ -11,7 +11,7 @@ const server = http.createServer(app);
 const io = new Server(server, {
     cors: {
       // Add your Vercel domain to the allowed origins
-      origin: ["https://bidzyy.vercel.app", "http://localhost:3000"],
+      origin: ["https://bidzyy.vercel.app", "http://localhost:3000","https://bidzy-production.up.railway.app/"],
       methods: ["GET", "POST"],
       credentials: true
     }
